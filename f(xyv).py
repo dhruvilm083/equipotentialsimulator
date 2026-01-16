@@ -26,38 +26,40 @@ data_AB = {
 data_BC = {
     5.0: (
         [0, 4, 8, 12, 13, 14, 14.5, 15, 15.5, 16],
-        [2.5, 2.5, 2.5, 2.5, 2.4, 5.00, 6.10, 7.90, 10.0, 13.0]
+        [-0.5, -0.5, -0.5, -0.5, -0.6, 2.00, 3.10, 4.90, 7.0, 10.0]
     ),
     4.0: (
         [0, 4, 8, 12, 13, 14, 14.5, 15, 15.5, 16, 16.5, 17, 17.5, 18, 18.5],
-        [1.80, 1.90, 1.90, 2.00, 2.00, 2.10, 2.30, 2.50, 2.70, 2.80, 2.80, 2.90, 3.00, 3.00, 3.00]
+        [-1.20, -1.10, -1.10, -1.00, -1.00, -0.90, -0.70, -0.50, -0.30, -0.20, -0.20, -0.10, 0.00, 0.00, 0.00]
     ),
     3.0: (
         [0, 4, 8, 12, 13, 14, 14.5, 15, 15.5, 16, 16.5],
-        [1.60, 1.60, 1.60, 1.60, 1.60, 1.80, 2.00, 2.30, 2.60, 3.10, 4.10]
+        [-1.40, -1.40, -1.40, -1.40, -1.40, -1.20, -1.00, -0.70, -0.40, 0.10, 1.10]
     ),
 }
 
 #CONFIGURATION (this is all in board coordinate system, 0,0 for me is start of positive plate)
 REGIONS = {"AB": data_AB, "BC": data_BC}
+REGIONS_DATA = REGIONS
+
 REGION_CFG = {
 
     "AB": {
-        "V1": (5.96+5.97)/2,  "Y1": 0.0,     "plate1_label": "Plate B (+)",
-        "V2": 0.0,       "Y2": 10.0,    "plate2_label": "Plate A (-)",
-        "X_FLAT_END": 12.0,
-        "BOARD_X_MIN": 0.0, "BOARD_X_MAX": 27.0,
-        "BOARD_Y_MIN": -5.0, "BOARD_Y_MAX": 15.0,
-        "PLATE_X_START": 0.0, "PLATE_X_END": 13.0,
+        "plate1_V": V_supply,  "plate1_y": 0.0,     "plate1_label": "Plate B (+)",
+        "plate2_V": 0.0,       "plate2_y": 10.0,    "plate2_label": "Plate A (-)",
+        "x_flat_end": 12.0,
+        "board_x_min": 0.0, "board_x_max": 27.0,
+        "board_y_min": -5.0, "board_y_max": 15.0,
+        "plate_x_start": 0.0, "plate_x_end": 13.0,
     },
 
     "BC": {
-        "V1": 0,       "Y1": 0.0,     "plate1_label": "Plate C (-)",
-        "V2": (5.96+5.97)/2,  "Y2": 3.0,     "plate2_label": "Plate B (+)",
-        "X_FLAT_END": 12.0,
-        "BOARD_X_MIN": 0.0, "BOARD_X_MAX": 27.0,
-        "BOARD_Y_MIN": -5.0, "BOARD_Y_MAX": 15.0,
-        "PLATE_X_START": 0.0, "PLATE_X_END": 13.0,
+        "plate1_V": 0,       "plate1_y": -3.0,     "plate1_label": "Plate C (-)",
+        "plate2_V": V_supply,  "plate2_y": 0.0,     "plate2_label": "Plate B (+)",
+        "x_flat_end": 12.0,
+        "board_x_min": 0.0, "board_x_max": 27.0,
+        "board_y_min": -5.0, "board_y_max": 15.0,
+        "plate_x_start": 0.0, "plate_x_end": 13.0,
     },
 }
 
@@ -247,5 +249,6 @@ if __name__ == "__main__":
 
     print("Example y_at('AB', 2.0, 10) =", y_at("AB", 5.0, 20.0))
     print(y_at("AB",5.0, 10.0))
+
 
 
