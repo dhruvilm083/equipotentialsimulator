@@ -5,7 +5,6 @@ from matplotlib.ticker import MultipleLocator
 from matplotlib.patches import Rectangle
 import sys
 import time
-import multiprocessing
 
 # YOUR DATA (EDIT HERE) (sorted by region/group, then voltage, then 2d list of centimeters, and y value)
 # THE DATA HERE IS ONLY FOR 6.0V (our lab for 1E03). 
