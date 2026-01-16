@@ -499,81 +499,59 @@ def solve_laplace(region, nx, ny, max_iter, tol, omega):
             sys.stdout.write("\n")
             end_time = time.perf_counter()
             elapsed_time = end_time - start_time
-            print(f"Converged in {it+1} iterations | {elapsed_time:.4f} seconds taken | final maxΔV = {diff:.3e}")
+            print(f"Converged in {it+1} iterations | {elapsed_time} seconds taken | final maxΔV = {diff:.3e}")
             return V
 
     sys.stdout.write("\n")
     print(f"Stopped at max_iter={max_iter} | last maxΔV = {diff:.3e}")
     return V
 
-def enforce_no_intersections_with_spacing(region, Vs_plot, xs_dense, Ymat, min_sep_cm=0.12):
+import numpy as np
+
+def enforce_no_intersections(Ymat, Vs, region, min_gap=0.08):
     """
-    Ymat shape = (len(Vs_plot), len(xs_dense))
-    Enforces:
-      1) equipotentials don't intersect
-      2) adjacent voltages keep a small separation (min_sep_cm)
-      3) if a curve collapses onto a neighbor, it gets re-centered using V-fraction midpoint
-         (so 5.5 stays between 5.0 and the next higher curve, instead of merging).
+    Enforce: equipotential lines never intersect AND stay separated by min_gap (cm).
+    Works for any voltage set Vs.
     """
+
     cfg = REGION_CFG[region.upper()]
 
-    Vs = np.asarray(Vs_plot, dtype=float)
+    # Decide if y should increase or decrease with V (depends on region sign convention)
+    increasing = ((cfg["plate2_V"] - cfg["plate1_V"]) * (cfg["plate2_y"] - cfg["plate1_y"])) > 0
+
+    y_min, y_max = cfg["board_y_min"], cfg["board_y_max"]
+
+    Y = Ymat.copy()
+
     order = np.argsort(Vs)
-    Vs_s = Vs[order]
-    Y = np.array(Ymat, dtype=float)[order].copy()
-
-    # Determine if y should increase with V (region-aware)
-    dV = (cfg["plate2_V"] - cfg["plate1_V"])
-    dy = (cfg["plate2_y"] - cfg["plate1_y"])
-    y_increases_with_V = (dy * dV) > 0
-
-    nV, nX = Y.shape
-
-    for j in range(nX):
-        col = Y[:, j]
-
-        # only work where we actually have values
-        finite = np.isfinite(col)
-        if finite.sum() < 2:
+    for k in range(Y.shape[1]):  # each x column
+        ycol = Y[order, k]
+        good = np.isfinite(ycol)
+        if good.sum() < 2:
             continue
 
-        # --- (A) If a curve is collapsing onto neighbor(s), re-center it by V-midpoint ---
-        # This is the "put 5.5 in the middle" behavior.
-        for i in range(1, nV - 1):
-            if not (np.isfinite(col[i-1]) and np.isfinite(col[i]) and np.isfinite(col[i+1])):
-                continue
+        idx = np.where(good)[0]
+        y = ycol[idx].copy()
 
-            # if it's too close to either neighbor, push to midpoint-in-V between neighbors
-            if (abs(col[i] - col[i-1]) < min_sep_cm) or (abs(col[i+1] - col[i]) < min_sep_cm):
-                frac = (Vs_s[i] - Vs_s[i-1]) / (Vs_s[i+1] - Vs_s[i-1])
-                target = col[i-1] + frac * (col[i+1] - col[i-1])
-                col[i] = target
-
-        # --- (B) Enforce strict ordering with minimum spacing ---
-        if y_increases_with_V:
-            # y must increase with V
-            for i in range(1, nV):
-                if not np.isfinite(col[i]) or not np.isfinite(col[i-1]):
-                    continue
-                if col[i] <= col[i-1] + min_sep_cm:
-                    col[i] = col[i-1] + min_sep_cm
+        if increasing:
+            # forward pass
+            for i in range(1, len(y)):
+                y[i] = max(y[i], y[i - 1] + min_gap)
+            # backward pass (keeps it "in the middle", not all pushed one way)
+            for i in range(len(y) - 2, -1, -1):
+                y[i] = min(y[i], y[i + 1] - min_gap)
         else:
-            # y must decrease with V
-            for i in range(1, nV):
-                if not np.isfinite(col[i]) or not np.isfinite(col[i-1]):
-                    continue
-                if col[i] >= col[i-1] - min_sep_cm:
-                    col[i] = col[i-1] - min_sep_cm
+            for i in range(1, len(y)):
+                y[i] = min(y[i], y[i - 1] - min_gap)
+            for i in range(len(y) - 2, -1, -1):
+                y[i] = max(y[i], y[i + 1] + min_gap)
 
-        Y[:, j] = col
+        y = np.clip(y, y_min, y_max)
 
-    # Clip to board after spacing (keeps it inside)
-    Y = np.clip(Y, cfg["board_y_min"], cfg["board_y_max"])
+        ycol[idx] = y
+        Y[order, k] = ycol
 
-    # undo voltage sorting
-    Y_fixed = np.empty_like(Ymat, dtype=float)
-    Y_fixed[order] = Y
-    return Y_fixed
+    return Y
 
 def plot_solution(region, V_grid, levels=None, show_measured=True):
     region = region.upper()
@@ -670,12 +648,9 @@ def plot_voltages(region, voltages):
             Y_list.append(y_piecewise(region, Vt, xs_dense))
 
         Ymat = np.vstack(Y_list)  # (nV, nX)
+        Vs = np.array(voltages_to_plot, dtype=float)
+        Ymat_fixed = enforce_no_intersections(Ymat, Vs, region, min_gap=0.08)
 
-        # enforce "no intersections"
-        Ymat_fixed = enforce_no_intersections_with_spacing(
-        region, Vs_plot, xs_dense, Ymat,
-        min_sep_cm=0.12  # tweak: 0.08 to 0.20
-    )
     ax = plt.gca()
     for i, Vt in enumerate(Vs_plot):
         ax.plot(xs_dense, Ymat_fixed[i], label=f"model {Vt:.3f}V")
