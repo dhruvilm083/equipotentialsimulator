@@ -1,3 +1,4 @@
+#start
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import CubicSpline
@@ -508,7 +509,7 @@ def solve_laplace(region, nx, ny, max_iter, tol, omega):
 
 import numpy as np
 
-def enforce_no_intersections(Ymat, Vs, region, min_gap=0.08):
+def enforce_no_intersections(Ymat, Vs, region, min_gap=0.12):
     """
     Enforce: equipotential lines never intersect AND stay separated by min_gap (cm).
     Works for any voltage set Vs.
@@ -715,3 +716,4 @@ if __name__ == "__main__":
     #print(y_at(region,5.0,15))
     #print(x_at(region,5.0,15))
 
+#end
