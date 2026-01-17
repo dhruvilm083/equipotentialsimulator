@@ -504,7 +504,9 @@ def solve_laplace(region, nx, ny, max_iter, tol, omega):
             return V
 
     sys.stdout.write("\n")
-    print(f"Stopped at max_iter={max_iter} | last maxΔV = {diff:.3e}")
+    end_time = time.perf_counter()
+    elapsed_time = end_time - start_time
+    print(f"Stopped at max_iter={max_iter} | {elapsed_time} seconds taken | last maxΔV = {diff:.3e}")
     return V
 
 import numpy as np
@@ -704,7 +706,7 @@ if __name__ == "__main__":
     V = solve_laplace(
         region=region,
         nx=300, ny=250,
-        max_iter=10000,
+        max_iter=100000,
         tol=1e-5,
         omega=1.9
     )
